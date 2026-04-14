@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Screening System</title>
+    <style>
+        :root { --primary: #10B981; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; }
+        header { background: linear-gradient(135deg, #10B981, #059669); color: white; padding: 24px 20px; text-align: center; }
+        header h1 { font-size: 28px; margin-bottom: 4px; }
+        header p { opacity: 0.9; font-size: 14px; }
+        .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+        .card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .card h3 { color: var(--primary); margin-bottom: 14px; font-size: 16px; }
+        label { display: block; font-size: 13px; color: #64748b; margin-bottom: 6px; }
+        input, select, button, textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; margin-bottom: 10px; background: white; }
+        button { background: var(--primary); color: white; border: none; font-weight: 600; cursor: pointer; }
+        button:hover { opacity: 0.9; }
+        .result { background: #ecfdf5; padding: 14px; border-radius: 10px; margin-top: 12px; font-size: 13px; display: none; }
+        .result.show { display: block; }
+        .candidate { background: #f0fdf4; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--primary); }
+        .match-high { border-left-color: #10B981; }
+        .match-med { border-left-color: #F59E0B; }
+        .match-low { border-left-color: #EF4444; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin: 2px; background: #e2e8f0; }
+        .badge.matched { background: #10B981; color: white; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>AI Resume Screening System</h1>
+        <p>By Raj Shekhar | B.Sc. IT Student</p>
+    </header>
+    <div class="container">
+        <!-- JD Input -->
+        <div class="card">
+            <h3>Job Description</h3>
+            <label>Paste the job description here</label>
+            <textarea id="jobDesc" rows="5" placeholder="E.g., Looking for a Python developer with 3+ years experience in Django, REST APIs, and PostgreSQL..."></textarea>
+            <label>Key Skills (comma separated)</label>
+            <input type="text" id="keySkills" placeholder="Python, Django, REST API, PostgreSQL, Git">
+            <button onclick="parseJD()">Analyze Job Description</button>
+            <div class="result" id="jdResult"></div>
+        </div>
+        <!-- Resume Upload -->
+        <div class="card">
+            <h3>Resume Input</h3>
+            <label>Paste resume text</label>
+            <textarea id="resumeText" rows="5" placeholder="E.g., Raj Shekhar | B.Sc. IT | Skills: Python, JavaScript, HTML, CSS, React, SQL, Machine Learning..."></textarea>
+            <button onclick="extractKeywords()">Extract Keywords</button>
+            <div class="result" id="keywordResult"></div>
+        </div>
+        <!-- Skill Match -->
+        <div class="card">
+            <h3>Skill Matching System</h3>
+            <label>Job Skills vs Candidate Skills</label>
+            <div id="matchResult"></div>
+            <button onclick="matchSkills()" style="margin-top:10px">Match Skills</button>
+        </div>
+        <!-- Cover Letter -->
+        <div class="card">
+            <h3>Cover Letter Analyser</h3>
+            <label>Paste cover letter</label>
+            <textarea id="coverLetter" rows="4" placeholder="Dear Hiring Manager, I am excited to apply for the Python Developer position..."></textarea>
+            <button onclick="analyzeCoverLetter()">Analyze Cover Letter</button>
+            <div class="result" id="coverResult"></div>
+        </div>
+        <!-- Shortlist -->
+        <div class="card">
+            <h3>Automated Shortlisting</h3>
+            <div id="shortlistResult"></div>
+            <button onclick="shortlist()" style="margin-top:10px">Generate Shortlist</button>
+        </div>
+    </div>
+    <script>
+        let jdSkills=[];
+        function parseJD() {
+            const jd=document.getElementById('jobDesc').value;
+            const skills=document.getElementById('keySkills').value.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+            jdSkills=skills;
+            if(!jd||!skills.length)return;
+            document.getElementById('jdResult').innerHTML='<b>Detected Skills:</b> '+skills.map(s=>'<span class="badge">'+s+'</span>').join(' ');
+            document.getElementById('jdResult').classList.add('show');
+        }
+        function extractKeywords() {
+            const text=document.getElementById('resumeText').value.toLowerCase();
+            const commonSkills=['python','javascript','html','css','react','sql','java','node.js','django','flask','git','docker','aws','machine learning','data analysis','nlp','rest api','mongodb','angular','vue','typescript','c++','c#','postgresql','mysql','linux','agile','scrum','figma','photoshop','communication','leadership','teamwork','problem solving'];
+            const found=commonSkills.filter(s=>text.includes(s));
+            document.getElementById('keywordResult').innerHTML='<b>Extracted Keywords:</b> '+found.map(s=>'<span class="badge matched">'+s+'</span>').join(' ')+(found.length?'<br><b>Total:</b> '+found.length+' skills found':'');
+            document.getElementById('keywordResult').classList.add('show');
+            return found;
+        }
+        function matchSkills() {
+            const candidateSkills=extractKeywords();
+            if(!jdSkills.length||!candidateSkills.length){document.getElementById('matchResult').innerHTML='<p>Please analyze JD and extract resume keywords first.</p>';return;}
+            const matched=jdSkills.filter(s=>candidateSkills.includes(s));
+            const missing=jdSkills.filter(s=>!candidateSkills.includes(s));
+            const score=Math.round((matched.length/jdSkills.length)*100);
+            document.getElementById('matchResult').innerHTML='<b>Match Score:</b> '+score+'%<br><b>Matched:</b> '+matched.map(s=>'<span class="badge matched">'+s+'</span>').join(' ')+'<br><b>Missing:</b> '+(missing.length?missing.map(s=>'<span class="badge">'+s+'</span>').join(' '):'None');
+        }
+        function analyzeCoverLetter() {
+            const cl=document.getElementById('coverLetter').value;
+            if(!cl)return;
+            const hasGreeting=/dear|hello|hi/.test(cl.toLowerCase());
+            const hasClosing=/sincerely|regards|thank/.test(cl.toLowerCase());
+            const length=cl.split(' ').length;
+            let feedback=[];
+            if(!hasGreeting)feedback.push('Add a greeting (Dear Hiring Manager).');
+            if(!hasClosing)feedback.push('Add a closing (Sincerely, Thank you).');
+            if(length<100)feedback.push('Cover letter is too short. Aim for 150-250 words.');
+            if(length>350)feedback.push('Cover letter is too long. Keep it concise.');
+            document.getElementById('coverResult').innerHTML=feedback.length?'<b>Feedback:</b> '+feedback.join('<br>'): '<b>Great cover letter!</b> Proper greeting, closing, and length.';
+            document.getElementById('coverResult').classList.add('show');
+        }
+        function shortlist() {
+            const candidates=[
+                {name:'Raj Shekhar',score:85,skills:['Python','JavaScript','React','SQL','ML'],status:'Recommended'},
+                {name:'Priya Sharma',score:72,skills:['Python','Django','PostgreSQL'],status:'Review'},
+                {name:'Amit Kumar',score:45,skills:['Java','Spring','MySQL'],status:'Not Suitable'},
+                {name:'Sneha Patel',score:90,skills:['Python','NLP','Django','AWS','Git'],status:'Highly Recommended'}
+            ];
+            const html=candidates.map(c=>{
+                const cls=c.score>=80?'match-high':c.score>=60?'match-med':'match-low';
+                return '<div class="candidate '+cls+'"><b>'+c.name+'</b> | Score: '+c.score+'% | Status: '+c.status+'<br>Skills: '+c.skills.map(s=>'<span class="badge matched">'+s+'</span>').join(' ')+'</div>';
+            }).join('');
+            document.getElementById('shortlistResult').innerHTML=html;
+        }
+    </script>
+</body>
+</html>
